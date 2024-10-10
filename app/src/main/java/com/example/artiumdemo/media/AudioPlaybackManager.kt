@@ -1,7 +1,5 @@
 package com.example.artiumdemo.media
 
-import android.content.ComponentName
-import android.content.Context
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
@@ -9,12 +7,9 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
-import androidx.media3.session.SessionToken
 import com.example.artiumdemo.data.models.AudioFile
-import com.example.artiumdemo.service.PlaybackService
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.runBlocking
 import java.util.UUID
@@ -22,7 +17,7 @@ import javax.inject.Inject
 
 
 class AudioPlaybackManager @Inject constructor(
-    @ApplicationContext private val context: Context
+    private var controllerFuture: ListenableFuture<MediaController>
 ) : Player.Listener {
 
     companion object {
@@ -33,9 +28,8 @@ class AudioPlaybackManager @Inject constructor(
 
     private var lastEmittedPosition: Long = 0
     private var currentMediaItem: MediaItem? = null
-    private var controllerFuture: ListenableFuture<MediaController>? = null
     private val controller: MediaController?
-        get() = if (controllerFuture?.isDone == true) controllerFuture?.get() else null
+        get() = if (controllerFuture.isDone == true) controllerFuture.get() else null
 
     private var handler: Handler? = null
 
@@ -74,7 +68,7 @@ class AudioPlaybackManager @Inject constructor(
     fun setAudio(mediaItem: MediaItem) {
         val controllerItemId = controller?.currentMediaItem?.mediaId
         currentMediaItem = mediaItem
-        if(controllerFuture?.isDone == false || controllerItemId == mediaItem.mediaId) {
+        if(controllerFuture.isDone == false || controllerItemId == mediaItem.mediaId) {
             return
         }
         controller?.setMediaItem(mediaItem)
@@ -100,18 +94,13 @@ class AudioPlaybackManager @Inject constructor(
     }
 
     fun initializeController() {
-        controllerFuture = MediaController.Builder(
-            context,
-            SessionToken(context, ComponentName(context, PlaybackService::class.java))
-        ).buildAsync()
-        controllerFuture?.addListener(::onControllerCreated, MoreExecutors.directExecutor())
+        controllerFuture.addListener(::onControllerCreated, MoreExecutors.directExecutor())
     }
 
     fun releaseController() {
         clearAudio()
         controller?.removeListener(this)
-        controllerFuture?.let(MediaController::releaseFuture)
-        controllerFuture = null
+        controllerFuture.let(MediaController::releaseFuture)
         handler?.removeCallbacks(playerPositionRunnable)
         handler = null
     }

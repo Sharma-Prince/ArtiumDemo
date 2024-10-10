@@ -12,12 +12,16 @@ import androidx.media3.session.MediaSessionService
 import com.example.artiumdemo.MainActivity
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
-
+@AndroidEntryPoint
 class PlaybackService : MediaSessionService() {
 
+    @Inject
+    lateinit var player: ExoPlayer
+
     private val librarySessionCallback = CustomMediaLibrarySessionCallback()
-    private var player: ExoPlayer? = null
     private var mediaLibrarySession: MediaSession? = null
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
@@ -26,19 +30,15 @@ class PlaybackService : MediaSessionService() {
 
     override fun onCreate() {
         super.onCreate()
-        player = ExoPlayer.Builder(this)
-            .setAudioAttributes(AudioAttributes.DEFAULT, true)
-            .setHandleAudioBecomingNoisy(true)
-            .build()
         val sessionActivityPendingIntent = TaskStackBuilder.create(this).run {
             addNextIntent(Intent(this@PlaybackService, MainActivity::class.java))
             val immutableFlag = when {
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> PendingIntent.FLAG_IMMUTABLE
+                true -> PendingIntent.FLAG_IMMUTABLE
                 else -> 0
             }
             getPendingIntent(0, immutableFlag or PendingIntent.FLAG_UPDATE_CURRENT)
         }
-        mediaLibrarySession = MediaSession.Builder(this, player!!)
+        mediaLibrarySession = MediaSession.Builder(this, player)
             .setCallback(librarySessionCallback)
             .setSessionActivity(sessionActivityPendingIntent)
             .build()
