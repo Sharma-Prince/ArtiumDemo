@@ -4,7 +4,7 @@ import android.content.Context
 import android.media.MediaMetadataRetriever
 import android.media.MediaRecorder
 import android.net.Uri
-import android.os.Environment
+import android.os.Build
 import com.example.artiumdemo.data.models.AudioFile
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,6 +16,11 @@ class AudioRecorderDataSourceImpl @Inject constructor(
 ) : AudioRecorderDataSource {
 
     private var recorder: MediaRecorder? = null
+    private fun createRecorder(): MediaRecorder {
+        return if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            MediaRecorder(context)
+        } else MediaRecorder()
+    }
     private var outputFile: File? = null
     private val _recordedFilesFlow = MutableStateFlow<List<AudioFile>>(emptyList())
 
@@ -24,7 +29,7 @@ class AudioRecorderDataSourceImpl @Inject constructor(
     }
 
     private fun loadExistingAudioFiles() {
-        val outputDir = context.getExternalFilesDir(Environment.DIRECTORY_MUSIC)
+        val outputDir = context.filesDir
         outputDir?.listFiles { file ->
             file.extension == "mp3"
         }?.forEach { file ->
@@ -38,16 +43,18 @@ class AudioRecorderDataSourceImpl @Inject constructor(
         }
     }
     override suspend fun startRecording(fileName: String) {
-        val outputDir = context.getExternalFilesDir(Environment.DIRECTORY_MUSIC)
+        val outputDir = context.filesDir
         outputFile = File(outputDir, "$fileName.mp3")
 
-        recorder = MediaRecorder().apply {
+        createRecorder().apply {
             setAudioSource(MediaRecorder.AudioSource.MIC)
             setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
             setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
             setOutputFile(outputFile?.absolutePath)
+
             prepare()
             start()
+            recorder = this
         }
     }
 

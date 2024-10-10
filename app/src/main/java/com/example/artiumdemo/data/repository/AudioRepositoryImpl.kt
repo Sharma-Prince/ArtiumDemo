@@ -26,11 +26,11 @@ class AudioRepositoryImpl @Inject constructor(
         audioRecorderDataSource.pauseRecording()
     }
 
-    override fun getAmplitude(): Int {
+    override suspend fun getAmplitude(): Int {
         return audioRecorderDataSource.getAmplitude()
     }
 
-    override fun getAllRecordedFiles(): Flow<List<AudioFile>> {
+    override suspend fun getAllRecordedFiles(): Flow<List<AudioFile>> {
         return audioRecorderDataSource.getAllRecordedFiles()
     }
 

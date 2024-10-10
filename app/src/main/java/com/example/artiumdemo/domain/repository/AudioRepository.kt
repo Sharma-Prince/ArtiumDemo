@@ -8,7 +8,7 @@ interface AudioRepository {
     suspend fun startRecording(fileName: String)
     suspend fun stopRecording(): File?
     suspend fun pauseRecording()
-    fun getAmplitude(): Int
-    fun getAllRecordedFiles(): Flow<List<AudioFile>>
+    suspend fun getAmplitude(): Int
+    suspend fun getAllRecordedFiles(): Flow<List<AudioFile>>
     suspend fun loadAudioAmplitudes(audioPath: String): List<Int>
 }

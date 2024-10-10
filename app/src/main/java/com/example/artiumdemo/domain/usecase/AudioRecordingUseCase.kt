@@ -16,10 +16,10 @@ class AudioRecordingUseCase @Inject constructor(
             is RecordingAction.Pause -> audioRepository.pauseRecording()
         }
     }
-    fun getAmplitude(): Int {
+    suspend fun getAmplitude(): Int {
         return audioRepository.getAmplitude()
     }
-    fun getAllRecordedFiles(): Flow<List<AudioFile>> {
+    suspend fun getAllRecordedFiles(): Flow<List<AudioFile>> {
         return audioRepository.getAllRecordedFiles()
     }
 }
